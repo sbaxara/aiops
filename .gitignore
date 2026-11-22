@@ -1,0 +1,40 @@
+# ---- Repository-wide ignores (per-folder .gitignore files still apply) ----
+
+# Virtual environments and Python caches
+.venv/
+__pycache__/
+*.py[cod]
+
+# Runtime data, logs and backups - never commit (contain customer/DB data)
+monitoring-server/data/
+monitoring-server/logs/
+monitoring-server/backups/
+monitoring-agent/logs/
+
+# Per-server generated agent configs (contain decrypted credentials)
+monitoring-server/config/*-*-*-*-*/
+monitoring-agent/config/monitors.yaml
+monitoring-agent/config/monitors.yaml.bak
+monitoring-agent/config/server-ca.crt
+
+# TLS material - generated per install, private keys must never be in git
+monitoring-server/certs/*.key
+monitoring-server/certs/*.crt
+monitoring-server/certs/*.pem
+
+# Secrets
+.env
+*.env.local
+
+# Bundled browsers / release output
+monitoring-agent/ms-playwright/
+dist/
+AxaraDist/
+
+# Local LLM prompt test captures
+prompt_tests/
+
+.pytest_cache/
+
+# dashboard dependencies (npm install)
+node_modules/

@@ -1,0 +1,276 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:19
+    pull_policy: if_not_present
+    container_name: monitoring-postgres
+    environment:
+      POSTGRES_DB: monitoring
+      POSTGRES_USER: ${DB_USER:-monitoring}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env - run ensure_env.py or bootstrap}
+    volumes:
+      # PostgreSQL 18+ images keep their data under /var/lib/postgresql/<major>/docker
+      - ./data/postgres:/var/lib/postgresql
+      - ./logs/postgres:/var/log/postgresql
+    ports:
+      - "5432:5432"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-monitoring}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:1.5.9          # same version as the chromadb client in requirements.txt
+    pull_policy: if_not_present
+    container_name: monitoring-chromadb
+    volumes:
+      - ./data/chromadb:/data
+    ports:
+      - "8000:8000"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    environment:
+      ANONYMIZED_TELEMETRY: "False"
+
+  # Ollama for Local LLM (Gemma 4:26B)
+  ollama:
+    image: ollama/ollama:0.40.16
+    pull_policy: if_not_present
+    container_name: monitoring-ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+    volumes:
+      - ./data/ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Initialize Ollama with Gemma 4:26B
+  ollama-init:
+    image: ollama/ollama:0.40.16
+    pull_policy: if_not_present
+    container_name: monitoring-ollama-init
+    depends_on:
+      - ollama
+    networks:
+      - monitoring-network
+    entrypoint: /bin/sh
+    command: 
+      - -c
+      - |
+        sleep 10
+        # Skip the pull when the model is already present (offline installs ship it).
+        if ollama show "${LLM_MODEL:-gemma4:26b}" >/dev/null 2>&1; then
+          echo "Model ${LLM_MODEL:-gemma4:26b} already present - skipping pull"
+        else
+          ollama pull "${LLM_MODEL:-gemma4:26b}" && echo "Model ${LLM_MODEL:-gemma4:26b} pulled successfully"
+        fi
+    environment:
+      OLLAMA_HOST: ollama:11434
+
+# Web Chat Interface for Ollama
+  # Dev/optional only: starts only when COMPOSE_PROFILES includes "webui" (set in .env).
+  # Not in offline bundles unless built with --include-open-webui. Runs WITHOUT auth.
+  open-webui:
+    profiles: ["webui"]
+    image: ghcr.io/open-webui/open-webui:main
+    pull_policy: if_not_present
+    container_name: monitoring-open-webui
+    depends_on:
+      - ollama
+    ports:
+      - "3000:8080"  # Exposes the web interface on host port 3000
+    volumes:
+      - ./data/open-webui:/app/backend/data
+    environment:
+      # Instruct Open WebUI to communicate with Ollama inside the network
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Optional: Disable user registration if this is strictly for local use
+      - WEBUI_AUTH=false 
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # Central Monitoring Server
+  monitoring-server:
+    # Stable name so the offline installer can load a pre-built image instead of rebuilding.
+    image: axara/monitoring-server:${AXARA_VERSION:-local}
+    build:
+      context: .
+      # Community: Dockerfile (plain source; --build-arg COMPILE=1 compiles the core).
+      # Enterprise: AXARA_SERVER_DOCKERFILE=Dockerfile.enterprise.
+      dockerfile: ${AXARA_SERVER_DOCKERFILE:-Dockerfile}
+    container_name: monitoring-server
+    env_file:          # SSO_*, AUDIT_*, TRUSTED_PROXIES … (explicit environment: entries below still win)
+      - path: .env
+        required: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+      ollama:
+        condition: service_started
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      ALLOWED_API_ORIGINS: "${ALLOWED_API_ORIGINS:-'self'}"
+      RATE_LIMIT_RPM: 300
+
+      # Database
+      DATABASE_URL: postgresql://${DB_USER:-monitoring}:${DB_PASSWORD:?DB_PASSWORD must be set in .env - run ensure_env.py or bootstrap}@postgres:5432/monitoring
+
+      # HuggingFace      
+      TRANSFORMERS_OFFLINE: 1
+      HF_HUB_OFFLINE:       1
+      HF_HOME:              /app/models
+
+      # Vector DB
+      CHROMA_URL: ${CHROMA_URL:-http://chromadb:8000}
+      
+      # LLM
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      LLM_MODEL: ${LLM_MODEL:-gemma4:26b}
+      LLM_NUM_PREDICT: 8192
+      LLM_TEMPERATURE: 0.0
+      LLM_TOP_P:       1.0
+      LLM_TOP_K:       1
+      
+      # Jira
+      JIRA_URL: ${JIRA_URL:-}
+      JIRA_USER: ${JIRA_USER:-}
+      JIRA_API_KEY: ${JIRA_API_KEY:-}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-}
+      
+      # ServiceNow
+      SERVICENOW_URL: ${SERVICENOW_URL:-}
+      SERVICENOW_USER: ${SERVICENOW_USER:-}
+      SERVICENOW_PASSWORD: ${SERVICENOW_PASSWORD:-}
+      SERVICENOW_CLIENT_ID: ${SERVICENOW_CLIENT_ID:-}
+      SERVICENOW_CLIENT_SECRET: ${SERVICENOW_CLIENT_SECRET:-}
+      SERVICENOW_CREATE_ENDPOINT: ${SERVICENOW_CREATE_ENDPOINT:-/api/oplti/sitescope_automation}
+      SERVICENOW_ASSIGNMENT_GROUP: ${SERVICENOW_ASSIGNMENT_GROUP:-OSS Assurance}
+      SERVICENOW_CALLER_ID: ${SERVICENOW_USER:-}
+      
+      SMTP_HOST: smtp.company.com
+      SMTP_PORT: 587
+      SMTP_USER: alerts@company.com
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: alerts@company.com
+      SMTP_ESCALATION_DEFAULT_EMAIL: oncall@company.com
+
+      # Microsoft Teams
+      TEAMS_WEBHOOK: ${TEAMS_WEBHOOK:-}
+      
+      # Slack
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      SLACK_CHANNEL: ${SLACK_CHANNEL:-}
+      
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-change_this_secret_key_in_production}
+      MASTER_ENCRYPTION_KEY: ${MASTER_ENCRYPTION_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      
+      ATTACHMENTS_DIR: /app/attachments
+      AGENT_CONFIG_DIR: /app/data/agent-config
+
+      # Server Config
+      LOG_LEVEL: INFO
+      
+    # Production: application code comes ONLY from the image. Source-code mounts for
+    # development live in docker-compose.override.yml (auto-loaded in a dev checkout,
+    # never shipped in offline bundles, never loaded when COMPOSE_FILE is set).
+    volumes:
+      - ./logs:/app/logs
+      - ./data/reports:/tmp/reports
+      - ./data/attachments:/app/attachments
+      - ./data/agent-config:/app/data/agent-config   # generated per-agent monitors.yaml
+      - ./data/licence-state:/app/data/licence-state
+      - ./licence:/app/licence                       # axara.lic (drop here or upload via Licence page)
+      - ./certs:/app/certs:ro
+
+    ports:
+      - "9090:9090"  # API
+
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:9090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Dashboard (React Frontend)
+  dashboard:
+    image: axara/dashboard:${AXARA_VERSION:-local}
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+      args:
+        AXARA_VERSION: ${AXARA_VERSION:-}      # empty: the version in dashboard/package.json
+    container_name: monitoring-dashboard
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./certs:/etc/nginx/certs:ro
+      - ./branding:/usr/share/nginx/branding:ro
+    depends_on:
+      - monitoring-server
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # Example Monitoring Agent (can be deployed on multiple servers)
+  # monitoring-agent:
+  #   build:
+  #     context: ./agent
+  #     dockerfile: Dockerfile
+  #   container_name: monitoring-agent-01
+  #   depends_on:
+  #     monitoring-server:
+  #       condition: service_healthy
+  #   environment:
+  #     CENTRAL_SERVER_URL: http://monitoring-server:9090
+  #     APP_NAME: ${APP_NAME:-ExampleApp}
+  #     APP_ENVIRONMENT: ${APP_ENVIRONMENT:-production}
+  #     SUPPORT_TEAM_EMAIL: ${SUPPORT_TEAM_EMAIL:-}
+  #   volumes:
+  #     - ./agent/config:/app/config
+  #     - agent_logs:/app/logs
+  #     # Mount host logs for monitoring (read-only)
+  #     - /var/log:/host/var/log:ro
+  #   networks:
+  #     - monitoring-network
+  #   network_mode: host  # For accurate system metrics
+  #   restart: unless-stopped
+
+volumes:
+  agent_logs:
+    driver: local
+
+networks:
+  monitoring-network:
+    driver: bridge

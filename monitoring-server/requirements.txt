@@ -1,0 +1,28 @@
+# Axara AIOps monitoring server - Community edition dependencies (Python 3.14 image).
+# The Enterprise image installs requirements-enterprise.txt (this file plus its extras).
+# Pinned to the latest stable releases on 22 Nov 2026; see THIRD_PARTY_NOTICES.md for licences.
+
+# Web framework
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.4
+python-multipart==0.0.34     # file uploads (incident attachments)
+
+# Auth
+bcrypt==5.0.0
+PyJWT==2.15.1
+
+# Database
+sqlalchemy==2.1.9
+alembic==1.20.1
+psycopg[binary]==3.3.9       # PostgreSQL driver (SQLAlchemy 2.1 default for postgresql://)
+
+# Incident memory (vector store and embeddings). PyTorch's default Linux wheels use CUDA 13.
+chromadb==1.5.9
+sentence-transformers==6.3.0
+torch==2.15.0
+
+# HTTP (Jira, Ollama), secrets at rest, configuration
+requests==2.34.2
+cryptography==50.0.2
+PyYAML==6.0.4

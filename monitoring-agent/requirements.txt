@@ -1,0 +1,18 @@
+# Axara AIOps agent dependencies (Python 3.11 or later when run as scripts).
+# Pinned to the latest stable releases on 22 Nov 2026; see THIRD_PARTY_NOTICES.md for licences.
+
+psutil==7.2.2            # system metrics, processes, ports
+PyYAML==6.0.4            # configuration files
+requests==2.34.2         # HTTPS to the server
+cryptography==50.0.2     # SSL monitor certificate parsing
+
+# Database monitor drivers
+pymongo==4.20.1          # MongoDB
+pymysql==1.2.4           # MySQL
+psycopg2-binary==2.9.13  # PostgreSQL
+
+# Browser monitors
+playwright==1.65.2
+
+# Windows-only (Windows service)
+pywin32==312; sys_platform == "win32"

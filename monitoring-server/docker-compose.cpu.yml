@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Axara Pty Ltd.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Overlay for hosts without an NVIDIA GPU: removes the GPU reservations so the stack starts.
+# Ollama then runs the model on the CPU (much slower; consider a smaller LLM_MODEL in .env).
+#   Linux/macOS: export COMPOSE_FILE=docker-compose.yml:docker-compose.cpu.yml
+#   Windows:     set COMPOSE_FILE=docker-compose.yml;docker-compose.cpu.yml
+# Needs Docker Compose 2.24 or later (!reset).
+services:
+  ollama:
+    deploy: !reset {}
+  monitoring-server:
+    deploy: !reset {}

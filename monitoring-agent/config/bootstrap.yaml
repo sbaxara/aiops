@@ -1,0 +1,19 @@
+# Bootstrap Configuration (First-run only)
+# This file is used for initial agent registration
+# After successful registration, agent_config.yaml will be auto-generated
+
+application:
+  name: "web-01"  # Change this to your application name
+  # id: "uuid"  # Optional: if you already have an application ID
+  environment: "production"  # production, staging, dev
+  tags: ["web", "critical"]
+
+support_team:                    # default ticket assignee of a new application
+  name: "Support Team"
+  email: "support@example.com"
+
+central_server:
+  url: "https://aid:9090"  # Change to your central server URL
+  ssl_verify: "C:\\Axara\\axara-aiops-community\\monitoring-agent\\config\\server-ca.crt"              # Set to true (or a CA cert path) in production
+  # The enrolment token is passed to `axara-agent install` (--enrol-token-file); it is never stored here.
+# The ticketing tool (Jira, or ServiceNow in Enterprise) is chosen per application on the server.

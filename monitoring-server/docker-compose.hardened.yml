@@ -1,0 +1,20 @@
+# Hardened overlay — production / customer installs. The offline installer enables
+# it by writing to .env:
+#     COMPOSE_PATH_SEPARATOR=,
+#     COMPOSE_FILE=docker-compose.yml,docker-compose.hardened.yml
+#
+# Internal services stop publishing host ports; they stay reachable on the internal
+# compose network only. Postgres, ChromaDB and Ollama have no authentication of their
+# own, and Open WebUI runs with WEBUI_AUTH=false, so none of them may be exposed
+# beyond the host. Still published: 443/80 (dashboard + API proxy) and 9090 (agents).
+#
+# Requires Docker Compose >= 2.24 (the !reset tag).
+services:
+  postgres:
+    ports: !reset []
+  chromadb:
+    ports: !reset []
+  ollama:
+    ports: !reset []
+  open-webui:
+    ports: !reset []

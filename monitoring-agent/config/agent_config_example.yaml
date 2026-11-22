@@ -1,0 +1,16 @@
+agent:
+  api_key: null
+  application_id: null
+  batch_size: 100
+  central_server_url: https://aid:9090
+  ssl_verify: false
+  check_interval_seconds: 300
+  retry_attempts: 3
+  server_id: null
+  timeout: 30
+  
+logging:
+  backup_count: 5
+  file: logs/agent.log
+  level: INFO
+  max_size_mb: 100
