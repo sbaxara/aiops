@@ -28,3 +28,9 @@ axara/agent/monitors/backups/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local install files
+enrol-token.txt
+config/backups/
+config/monitors.yaml
+config/server-ca.crt
