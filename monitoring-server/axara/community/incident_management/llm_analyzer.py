@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 LLM Analyzer
-Analyzes incidents using Qwen 3:30B for root cause and recommendations.
+Analyzes incidents using a local LLM for root cause and recommendations.
 
 JSON Standardization (D2): uses the /api/chat endpoint with system+user messages,
 a <|think|>-led system instruction that ALSO requires a single JSON object response
@@ -28,7 +28,7 @@ RESPONSE_SCHEMA_REF = "incident_analysis_response@1.0"
 
 
 class LLMAnalyzer:
-    """LLM-powered incident analysis using Qwen 3:30B (chat + JSON)."""
+    """LLM-powered incident analysis using a local LLM (chat + JSON)."""
 
     def __init__(
         self,
