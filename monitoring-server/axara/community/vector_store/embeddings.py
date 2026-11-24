@@ -18,7 +18,7 @@ def _shared_model():
         with _lock:
             if _model is None:
                 from sentence_transformers import SentenceTransformer
-                _model = SentenceTransformer(_MODEL_NAME)
+                _model = SentenceTransformer(_MODEL_NAME, local_files_only=True)
     return _model
 
 
