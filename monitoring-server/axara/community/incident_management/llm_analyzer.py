@@ -323,11 +323,9 @@ class LLMAnalyzer:
             "options": options,
         }
         try:
-            logger.info(f"LLM payload: {payload}")
             resp = requests.post(url, json=payload, timeout=self.request_timeout)
             resp.raise_for_status()
             data = resp.json()
-            logger.info(f"LLM response: [{data}]")
             # /api/chat returns {"message": {"role": "...", "content": "..."}}
             return (data.get("message", {}) or {}).get("content", "") or ""
         except requests.exceptions.Timeout:
