@@ -6,20 +6,18 @@
 Keeps shebang/encoding lines first and preserves each file's line endings.
 
 Usage (repository root):
-  python monitoring-server/tools/add_copyright.py [--check]                 the Community sources (AGPL)
-  python monitoring-server/tools/add_copyright.py [--check] --proprietary PATH...
-                                                                            other code (all rights reserved)
-PATH may be a folder or a file; without PATH the Community source folders are used.
+  python monitoring-server/tools/add_copyright.py [--check] [PATH...]
+
+PATH may be a folder or a file; without PATH the source folders below are used. The header is
+the AGPL-3.0-or-later notice.
 """
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-AGPL = ("Copyright (c) 2026 Axara Pty Ltd.", "SPDX-License-Identifier: AGPL-3.0-or-later")
-PROPRIETARY = ("Copyright (c) 2026 Axara Pty Ltd. All rights reserved.",
-               "SPDX-License-Identifier: LicenseRef-Axara-Proprietary")
-COMMUNITY_PATHS = [
+HEADER = ("Copyright (c) 2026 Axara Pty Ltd.", "SPDX-License-Identifier: AGPL-3.0-or-later")
+SOURCE_PATHS = [
     "monitoring-server/axara/community", "monitoring-server/config/monitor_templates",
     "monitoring-server/tools", "monitoring-server/tests", "monitoring-server/manage.py",
     "monitoring-server/ensure_env.py", "monitoring-server/dashboard/src",
@@ -86,13 +84,8 @@ def main(argv) -> int:
         Exit code: 1 when --check finds files without a header.
     """
     check = "--check" in argv
-    proprietary = "--proprietary" in argv
-    paths = [a for a in argv if not a.startswith("--")] or ([] if proprietary else COMMUNITY_PATHS)
-    if proprietary and not paths:
-        print("--proprietary needs at least one PATH")
-        return 2
-    header = PROPRIETARY if proprietary else AGPL
-    changed = [p for p, m in targets(paths) if add(p, m, header, check)]
+    paths = [a for a in argv if not a.startswith("--")] or SOURCE_PATHS
+    changed = [p for p, m in targets(paths) if add(p, m, HEADER, check)]
     for p in changed:
         print(("missing: " if check else "added: ") + str(p.relative_to(ROOT)))
     print(f"{len(changed)} file(s) {'missing a header' if check else 'updated'}")

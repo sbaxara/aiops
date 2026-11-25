@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Check the code documentation standard on source files.
 
-Every file needs a notice header with an SPDX-License-Identifier line in its first lines
-(AGPL-3.0-or-later for Community files, LicenseRef-Axara-Proprietary for Enterprise files)
+Every file needs a notice header with an `SPDX-License-Identifier: AGPL-3.0-or-later` line in its
+first lines
 and a description of what it does. Every function and class needs a Google-style docstring
 (Python) or a comment block directly above it (JavaScript, shell, batch).
 
@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import List
 
-SPDX = re.compile(r"SPDX-License-Identifier:\s*(AGPL-3\.0-or-later|LicenseRef-Axara-Proprietary)")
+SPDX = re.compile(r"SPDX-License-Identifier:\s*AGPL-3\.0-or-later")
 CHECKED = (".py", ".js", ".jsx", ".sh", ".bat", ".cmd")
 SKIP_PARTS = {"node_modules", "dist", ".venv", "__pycache__", "migrations"}
 
