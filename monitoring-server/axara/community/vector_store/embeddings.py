@@ -3,6 +3,10 @@
 """
 Embedding generation for RAG. The sentence-transformers model is loaded once per worker
 process and shared, rather than once per incident orchestrator (one per background task).
+
+The model is downloaded into the image at build time (Dockerfile) and always loaded from that
+local copy: local_files_only stops the library from asking the Hugging Face Hub for a newer
+version, so the server never attempts a network call for it (air-gapped installs included).
 """
 import threading
 

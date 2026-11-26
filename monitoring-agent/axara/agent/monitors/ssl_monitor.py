@@ -12,7 +12,7 @@ Status per certificate (and for the scan, the worst of them):
     warning  it expires within the warning threshold;
     pass     otherwise.
 A handshake that fails on a TLS port is a fail. Protocol versions and cipher suites are not
-checked here; the Enterprise edition adds a separate TLS monitor for them.
+checked here; a plugin can add a separate monitor for them.
 
 Entry in monitors.yaml:
     config:
