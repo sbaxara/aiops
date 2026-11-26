@@ -190,6 +190,17 @@ URLs and credentials from environment variables on the host, never from the scri
   `python -m playwright install chromium` (needs internet), or point `PLAYWRIGHT_BROWSERS_PATH` at a copy.
 - Compiled mode: `install --with-browser` installs the Chromium package built with the agent.
 
+**Try it with the demo journey.** `scripts/browser/demo_search_journey.py` opens Wikipedia, searches
+for "Python (programming language)" and checks that the article opens. Run it by hand first:
+```bash
+python scripts/browser/demo_search_journey.py      # prints a JSON result; exit code 0 = pass
+```
+Then add a Browser monitor in the dashboard with script path `scripts/browser/demo_search_journey.py`
+(for example with duration thresholds of 8000 ms warning and 15000 ms critical). The site, search
+text and expected heading can be changed with the `DEMO_SEARCH_URL`, `DEMO_SEARCH_TERM` and
+`DEMO_EXPECT_HEADING` environment variables. When a journey fails, the script's screenshot is
+attached to the incident.
+
 ## Upgrade
 
 - **Python mode**: stop the agent, replace the source files (keep `config/`, `queue/` and `.venv`),
@@ -246,5 +257,6 @@ axara/agent/monitors/ monitor scripts (kept as source; updated by the server)
 axara/agent/utils/    helpers
 config/               bootstrap.yaml and the example agent_config
 agent.sh, agent.bat   run from a source checkout with .venv
+scripts/browser/      browser journey scripts (demo_search_journey.py)
 tests/                test suite
 ```
