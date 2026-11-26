@@ -25,23 +25,28 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Extra handlers for coded API errors, added by the edition module (see App.jsx).
+const errorCodeHandlers = [];
+
+/**
+ * Add a handler called for every API error whose detail is {code, message}.
+ * @param {(code: string, error: object) => void} fn - Handler.
+ */
+export function addErrorCodeHandler(fn) {
+  errorCodeHandlers.push(fn);
+}
+
 // Global response error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Licence errors carry {code, message}. Flatten to a string so every page that renders
-    // `detail` keeps working, and send admins to the Licence page when the licence is blocked.
+    // Coded errors carry {code, message}. Flatten to a string so every page that renders
+    // `detail` keeps working, keep the code on error.errorCode and pass it to the handlers.
     const detail = error.response?.data?.detail;
     if (detail && typeof detail === 'object' && detail.code) {
-      error.licenceCode = detail.code;
+      error.errorCode = detail.code;
       error.response.data.detail = detail.message || detail.code;
-      if (detail.code === 'licence_blocked' && !window.location.pathname.startsWith('/licence')
-          && !window.location.pathname.startsWith('/login')) {
-        let role = null;
-        try { role = JSON.parse(localStorage.getItem('auth_user') || '{}').role; } catch { /* ignore */ }
-        if (role === 'admin') window.location.href = '/licence';
-        else { localStorage.removeItem('auth_user'); window.location.href = '/login?licence=blocked'; }
-      }
+      errorCodeHandlers.forEach(fn => { try { fn(detail.code, error); } catch { /* ignore */ } });
     }
     if (error.response?.status === 401) {
       // Token expired or invalid — clear session and redirect to login
@@ -72,10 +77,6 @@ export const endpoints = {
 
   // Applications
   applications:     ()              => api.get('/config/applications'),
-
-  // Topology
-  topologyGraph:    (params = {})   => api.get('/topology/graph', { params }),
-  topologyRebuild:  ()              => api.post('/topology/rebuild'),
 
   // Config
   serverConfig:     ()              => api.get('/config/server'),

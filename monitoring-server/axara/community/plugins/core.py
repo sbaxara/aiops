@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The core's own registrations: the Jira ticket provider and the ITSM sync job.
 
-Jira is the core's ticketing tool (always available, no licence feature). The ITSM sync
+Jira is the core's ticketing tool (always available, no feature gate). The ITSM sync
 job polls every active ticket provider for tickets resolved in the ticketing tool and
 resolves the matching AIOps incidents (incident_management.itsm_sync).
 """

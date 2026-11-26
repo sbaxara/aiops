@@ -5,10 +5,10 @@
 The core builds one Registry at start-up (plugins.loader.get_registry). The core and each
 plugin call register(registry) to add ticket providers, notifiers, sign-in hooks, API routers,
 start-up/shutdown hooks, agent-registered hooks, incident-field providers, monitor-template
-folders, migration folders and settings defaults. A registration may name a licence feature; it is then active only while
-`feature_allowed(feature)` is true, checked each time it is used, so a licence change takes
-effect without a restart. Without a licence gate installed (Community), every registered
-feature is allowed and every stage-gated function is on.
+folders, migration folders and settings defaults. A registration may name a feature; it is
+then active only while `feature_allowed(feature)` is true, checked each time it is used, so a
+gate change takes effect without a restart. Without a gate installed (Community), every
+registered feature is allowed and every stage-gated function is on.
 """
 import logging
 from dataclasses import dataclass, field
@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Stage-gated functions the core asks about (licence stages in Enterprise; always on otherwise).
+# Stage-gated functions the core asks about (always on unless a plugin installs gates).
 FUNCTIONS = ("analysis", "notifications", "incidents")
 # Request checks and core events plugins can hook (see add_check / add_event_hook).
 CHECKS = ("login", "user", "agent_registration", "agent_intake")
@@ -117,7 +117,7 @@ class TicketProvider:
 
 
 class Notifier:
-    """Interface for an outbound notification channel (Email, Slack, Teams, ...)."""
+    """Interface for an outbound notification channel (e.g. email)."""
 
     name = ""
 
@@ -315,7 +315,7 @@ class Registry:
 
     # ------------------------------------------------------------- request checks
     def add_check(self, kind: str, check: Callable) -> None:
-        """Register a check that may refuse a request (Enterprise licence enforcement).
+        """Register a check that may refuse a request (e.g. a plugin's usage limits).
 
         Kinds and how they are called:
             "login":              check(user) when a session token is issued;
@@ -441,7 +441,7 @@ class Registry:
         return list(self._audit_skip)
 
     def add_audit_sink(self, sink: Callable[[Dict[str, Any]], None]) -> None:
-        """Register a receiver of every audit event after it is stored (e.g. SIEM forwarding).
+        """Register a receiver of every audit event after it is stored (e.g. log forwarding).
 
         Args:
             sink: f(event dict); exceptions are logged and never affect the audit log.
@@ -557,7 +557,7 @@ class Registry:
 
     # ------------------------------------------------------------- sign-in
     def add_password_login(self, hook: Callable, feature: Optional[str] = None) -> None:
-        """Register an alternative password sign-in (e.g. LDAP).
+        """Register an alternative password sign-in (e.g. a directory service).
 
         Args:
             hook: async f(request, db, user, ip, ua) -> LoginResponse | None. Return None to
@@ -575,7 +575,7 @@ class Registry:
         return [e.item for e in self._password_logins if self.feature_allowed(e.feature)]
 
     def set_local_registration_check(self, check: Callable[[], bool]) -> None:
-        """Let a plugin decide whether local self-registration is allowed (e.g. SSO settings).
+        """Let a plugin decide whether local self-registration is allowed (e.g. a plugin's sign-in settings).
 
         Args:
             check: f() -> bool.
@@ -846,7 +846,7 @@ class Registry:
 
     # ------------------------------------------------------------- incidents
     def add_incident_fields(self, provider: Callable, feature: Optional[str] = None) -> None:
-        """Register a provider of extra fields shown with incidents (e.g. correlation).
+        """Register a provider of extra fields shown with incidents (e.g. links between incidents).
 
         Args:
             provider: f(db, incident_ids, detail) -> {incident_id: {field: value}}. `detail`
@@ -920,7 +920,7 @@ class Registry:
         Args:
             folder: Folder holding *_monitor.py files.
             feature: Licence feature; the folder is served only while allowed.
-            condition: Extra f() -> bool checked each time (e.g. "licence not blocked");
+            condition: Extra f() -> bool checked each time (e.g. "plugin enabled");
                 an error counts as False.
         """
         self._template_dirs.append(_Entry(Path(folder), feature, options={"condition": condition}))

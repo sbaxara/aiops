@@ -4,7 +4,7 @@
 
 Configures logging, middleware (CORS, security headers, rate limit, audit), mounts the core
 routers, then the routers and start-up/shutdown hooks registered by plugins
-(plugins.loader). Licence checks, when a plugin installs them, apply through the
+(plugins.loader). Request checks, when a plugin installs them, apply through the
 registry's request guards.
 """
 from fastapi import FastAPI, Depends, HTTPException
@@ -138,8 +138,8 @@ app.add_middleware(AuditMiddleware)
 from axara.community.api.guards import require_agent_intake, require_user
 
 _registry = get_registry()
-# Agent routers and UI routers run the registry's checks (Enterprise: licence intake and
-# "licence not blocked"); in Community they only require the agent key / a signed-in user.
+# Agent routers and UI routers run the registry's checks (any a plugin adds); in Community
+# they only require the agent key / a signed-in user.
 _agent_guard = [Depends(require_agent_intake)]
 _auth_dep = [Depends(require_user)]
 

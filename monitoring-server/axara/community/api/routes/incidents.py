@@ -118,7 +118,7 @@ def _enrich(incident: Incident, db: Session, *, extra: Optional[Dict[str, Any]] 
 
     Adds the application and server names, the comments, the ticket link (ticket_url,
     from the provider that opened the ticket) and the fields plugins provide through the
-    registry (e.g. Enterprise correlation and escalation fields).
+    registry.
 
     Args:
         incident: Incident row with application, server (and comments) loaded.

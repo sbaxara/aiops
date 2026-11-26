@@ -4,7 +4,7 @@
 
 Issues and validates the HS256 session tokens (SECRET_KEY) used by every UI route, provides
 the get_current_user / require_admin dependencies, and audits every sign-in attempt.
-Alternative password sign-ins (Enterprise LDAP/AD) come from the plugin registry.
+Alternative password sign-ins, when a plugin adds them, come from the plugin registry.
 """
 from fastapi import APIRouter, HTTPException, Depends, Header, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -109,8 +109,7 @@ def create_token(user: User) -> str:
         The signed token (expires after TOKEN_EXPIRY_HOURS).
 
     Raises:
-        HTTPException: 403 when a plugin's login check refuses the user (e.g. Enterprise
-            licence blocked: administrators only).
+        HTTPException: 403 when a plugin's login check refuses the user.
     """
     from axara.community.plugins.loader import get_registry
     get_registry().run_checks("login", user)
@@ -286,7 +285,7 @@ async def login(request: LoginRequest, http_request: Request, db: Session = Depe
 
     user = db.query(User).filter(User.username == request.username).first()
 
-    # Alternative password sign-ins registered by plugins (e.g. Enterprise LDAP/AD). Each
+    # Alternative password sign-ins registered by plugins (e.g. a directory service). Each
     # returns a LoginResponse, None to fall through to local sign-in, or raises HTTPException.
     from axara.community.plugins.loader import get_registry
     for hook in get_registry().password_logins():

@@ -22,8 +22,12 @@ import UserApprovals from './pages/UserApprovals';
 import AuditLog from './pages/AuditLog';
 import AgentEnrolment from './pages/AgentEnrolment';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import * as edition from '@edition';      // Community: none; Enterprise: its pages
+import * as edition from '@edition';      // Community: none; other editions: their pages
+import { addErrorCodeHandler } from './services/api';
 import './index.css';
+
+// Let the edition module react to coded API errors (none in Community).
+if (edition.onErrorCode) addErrorCodeHandler(edition.onErrorCode);
 
 const queryClient = new QueryClient({
   defaultOptions: {

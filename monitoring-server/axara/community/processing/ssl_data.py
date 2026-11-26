@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Axara Pty Ltd.
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""SSL certificate scan results for the SSL page (and the Enterprise SSL report section).
+"""SSL certificate scan results for the SSL page (and any plugin reports that use them).
 
 Reads the stored `ssl` metrics (one row per scan by the agent's ssl monitor) and summarises
 the latest scan per server, keeping the scan history for the page.

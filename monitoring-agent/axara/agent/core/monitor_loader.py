@@ -88,7 +88,7 @@ def extra_monitor_classes() -> Dict[str, type]:
     """Monitor classes from scripts that declare their own type (MONITOR_TYPE).
 
     The built-in monitors are exported by the package's __init__; a script added later by
-    the server (e.g. the Enterprise TLS monitor) is not, so every *_monitor.py file is
+    the server (e.g. one a server plugin adds) is not, so every *_monitor.py file is
     imported and any class with a MONITOR_TYPE attribute is offered for that type.
     A script that fails to import is logged and skipped.
 

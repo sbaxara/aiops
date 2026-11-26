@@ -18,9 +18,8 @@ from axara.community.plugins.registry import Registry
 logger = logging.getLogger(__name__)
 
 ENTRY_POINT_GROUP = "axara.plugins"
-# Plugin modules loaded when present in the image. The Enterprise package (axara.enterprise)
-# is simply absent from a Community image; release builds also install it with an
-# `axara.plugins` entry point (phase 5).
+# Plugin modules loaded when present in the image (a Community image has none of them).
+# Plugins can also be installed with an `axara.plugins` entry point.
 BUILTIN_PLUGINS: List[str] = ["axara.enterprise.plugin"]
 
 _registry: Optional[Registry] = None

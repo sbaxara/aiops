@@ -81,7 +81,7 @@ async def submit_metrics(
         server_repo = ServerRepository(db)
         server = agent
 
-        # Plugin checks (Enterprise licence: refused when blocked or beyond the agent limit).
+        # Plugin checks (any a plugin adds; none in Community).
         from axara.community.plugins.loader import get_registry
         get_registry().run_checks("agent_intake", str(server.id))
         _note_agent_clock(http_request, server, request, server_repo)
@@ -190,7 +190,7 @@ async def submit_metrics(
 
 
 def _note_agent_clock(http_request: Request, server, request: MetricsSubmissionRequest, server_repo):
-    """Licence clock-rollback evidence: the metric timestamp of a live (not replayed) batch,
+    """Clock evidence for plugins: the metric timestamp of a live (not replayed) batch,
     only when the agent proved its identity with its Bearer key."""
     if request.is_replay or not request.timestamp:
         return

@@ -9,8 +9,8 @@
   python manage.py rag-reindex         rebuild the similar-incident store from resolved incidents
   python manage.py make-cert           create a self-signed TLS certificate (CERT_DIR, CERT_HOSTS)
 
-Installed plugins add their own commands (the Enterprise edition: fingerprint, licence-status,
-licence-request); `python manage.py help` lists everything available.
+Installed plugins may add their own commands; `python manage.py help` lists everything
+available.
 Compiled modules cannot be run with `python -m package.module`, hence this entry point.
 """
 import sys

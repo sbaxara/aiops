@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """ITSM sync job: resolves AIOps incidents whose tickets were resolved in the ticketing tool.
 
-Replaces the inbound Jira/ServiceNow webhooks (removed in v3.2). Every few minutes the job
+No inbound ticketing webhooks are needed. Every few minutes the job
 asks each incident's ticket provider whether the ticket is resolved; when it is, the AIOps
 incident is marked resolved, the ticket's resolution notes are kept on the incident, and the
 incident is stored in incident memory (RAG) so similar incidents get those notes later.
@@ -59,7 +59,7 @@ def sync_once(db, registry=None) -> int:
     orch = None
     for inc in incidents:
         provider = reg.ticket_provider(inc.ticket_provider)
-        if provider is None:                    # tool not installed or not licensed now
+        if provider is None:                    # tool not installed or not enabled now
             continue
         ticket = inc.ticket_ref
         notes = provider.fetch_resolution(ticket)

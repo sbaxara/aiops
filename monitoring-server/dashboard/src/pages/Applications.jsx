@@ -237,7 +237,7 @@ function MaintenanceCreateForm({ app, servers, onCancel, onDone, setErr }) {
         </div>
       </div>
 
-      {/* Notifications and escalation exist only in the Enterprise edition; without them a
+      {/* Notifications and escalation come from the edition module; without them a
           window suppresses new incidents (stored as 'both', which covers that). */}
       {edition.hasAlerting ? (
         <div>
@@ -278,7 +278,7 @@ function MaintenanceCreateForm({ app, servers, onCancel, onDone, setErr }) {
 }
 
 // App Config Modal
-// Tabs: the edition's (Enterprise: ticketing, escalation, notification), then maintenance.
+// Tabs: the edition module's, then maintenance.
 function AppConfigModal({ app, onClose }) {
   const { user } = useAuth();
   const isAdmin  = user?.role === 'admin';

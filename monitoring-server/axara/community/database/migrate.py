@@ -3,8 +3,7 @@
 """Apply the database migrations of the core and of every installed plugin.
 
 The schema is one Alembic history with branches: the core branch (label `core`, in
-database/migrations/versions) and one branch per plugin that has its own tables (for
-example `enterprise`), each depending on the core baseline. Plain `alembic upgrade head`
+database/migrations/versions) and one branch per plugin that has its own tables, each depending on the core baseline. Plain `alembic upgrade head`
 only knows the core folder, so the server runs migrations through this module
 (`python manage.py migrate`), which adds the folders plugins register
 (Registry.add_migration_dir) and upgrades every branch head.

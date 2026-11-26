@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  // SSO handoff: the token arrives via /sso/complete; fetch the profile with it.
+  // Sign in with a token issued elsewhere (e.g. by a plugin's sign-in page); fetch the profile.
   const loginWithToken = async (token) => {
     const { data } = await axios.get('/api/v1/auth/me', {
       headers: { Authorization: `Bearer ${token}` },

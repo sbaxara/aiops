@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Axara Pty Ltd.
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Community edition: no extra pages, menu entries or banner. The Enterprise build replaces
-// this module with src/enterprise/index.jsx (see vite.config.js, alias @edition).
+// Community edition: no extra pages, menu entries or banner. Another edition's build can
+// replace this module (see vite.config.js, alias @edition).
 
 export const EDITION = 'community';
 export const publicRoutes = [];
@@ -17,6 +17,22 @@ export const fixedCadenceMonitorTypes = [];    // types whose interval the serve
 export const FixedCadenceNote = null;          // monitor form note for those types
 export const MonitorDetailCard = null;         // extra card on the monitor page
 export const removeAgentNotes = [];            // extra lines in the Remove agent dialog
+export const onErrorCode = null;               // handler for coded API errors
+export const IncidentBadges = null;            // extra badges on an incident ({incident, size})
+export const IncidentDetailCards = null;       // extra cards on the incident page ({incident, Card})
+
+/**
+ * Message for the login page taken from its URL (none in this edition).
+ *
+ * Args:
+ *   searchParams: URLSearchParams of the login page.
+ *
+ * Returns:
+ *   '' (no message)
+ */
+export function loginMessage(searchParams) {   // eslint-disable-line no-unused-vars
+  return '';
+}
 
 /**
  * Extra tabs of the application settings dialog (none in this edition).
@@ -32,8 +48,8 @@ export function useAppSettings() {
  * Sign-in options shown on the login page (local accounts only).
  *
  * Returns:
- *   {providers: [], localRegistration: true}
+ *   {providers: [], localRegistration: true, usernamePlaceholder: '', passwordHint: ''}
  */
 export function useLoginOptions() {
-  return { providers: [], localRegistration: true };
+  return { providers: [], localRegistration: true, usernamePlaceholder: '', passwordHint: '' };
 }

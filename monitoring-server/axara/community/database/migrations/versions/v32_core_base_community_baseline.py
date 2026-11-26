@@ -174,7 +174,6 @@ def upgrade() -> None:
     sa.Column('consecutive_failures', sa.INTEGER(), nullable=True),
     sa.Column('severity', sa.VARCHAR(length=20), nullable=True),
     sa.Column('assignee_override', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('notification_override', postgresql.JSONB(astext_type=Text()), nullable=True),
     sa.Column('config', postgresql.JSONB(astext_type=Text()), nullable=True),
     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('updated_at', postgresql.TIMESTAMP(timezone=True), nullable=True),
@@ -290,7 +289,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Drop the whole Community schema (the enterprise branch must be downgraded first)."""
+    """Drop the whole Community schema (plugin branches must be downgraded first)."""
     op.execute("DROP TRIGGER IF EXISTS trg_audit_log_no_truncate ON audit_log")
     op.execute("DROP TRIGGER IF EXISTS trg_audit_log_no_update_delete ON audit_log")
     op.execute("DROP FUNCTION IF EXISTS audit_log_block_modify()")

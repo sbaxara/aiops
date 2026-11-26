@@ -16,7 +16,7 @@ Decommissioning (one transaction, then file clean-up)
     cascades to its metrics (past reports keep the host);
   * plugins delete their own data about the host (agent_decommissioned event), its API
     key is revoked and the server row is
-    marked 'decommissioned' - it no longer counts toward the licence. The link to its
+    marked 'decommissioned' - it no longer counts as an active agent. The link to its
     platform application is kept so reports for past periods still show the host under
     that application;
   * its monitors.yaml folder under AGENT_CONFIG_DIR is deleted.

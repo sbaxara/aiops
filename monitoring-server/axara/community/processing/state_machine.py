@@ -350,7 +350,8 @@ class MonitorStateMachine:
         Existing open incidents on this server are NOT affected by 'incidents' —
         only the creation of new ones.
 
-        Licence: no new incidents in monitoring-only / blocked (same effect as suppression).
+        Plugin gate: no new incidents while the 'incidents' function is off (same effect as
+        suppression).
         """
         from axara.community.plugins.loader import get_registry
         if not get_registry().function_allowed("incidents"):

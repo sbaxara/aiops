@@ -112,11 +112,11 @@ services:
     image: axara/monitoring-server:${AXARA_VERSION:-local}
     build:
       context: .
-      # Community: Dockerfile (plain source; --build-arg COMPILE=1 compiles the core).
-      # Enterprise: AXARA_SERVER_DOCKERFILE=Dockerfile.enterprise.
+      # Dockerfile: plain source by default; --build-arg COMPILE=1 compiles the core.
+      # AXARA_SERVER_DOCKERFILE picks another Dockerfile (e.g. one that adds plugins).
       dockerfile: ${AXARA_SERVER_DOCKERFILE:-Dockerfile}
     container_name: monitoring-server
-    env_file:          # SSO_*, AUDIT_*, TRUSTED_PROXIES … (explicit environment: entries below still win)
+    env_file:          # TRUSTED_PROXIES and other optional settings (explicit environment: entries below still win)
       - path: .env
         required: false
     depends_on:
@@ -162,30 +162,6 @@ services:
       JIRA_API_KEY: ${JIRA_API_KEY:-}
       JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-}
       
-      # ServiceNow
-      SERVICENOW_URL: ${SERVICENOW_URL:-}
-      SERVICENOW_USER: ${SERVICENOW_USER:-}
-      SERVICENOW_PASSWORD: ${SERVICENOW_PASSWORD:-}
-      SERVICENOW_CLIENT_ID: ${SERVICENOW_CLIENT_ID:-}
-      SERVICENOW_CLIENT_SECRET: ${SERVICENOW_CLIENT_SECRET:-}
-      SERVICENOW_CREATE_ENDPOINT: ${SERVICENOW_CREATE_ENDPOINT:-/api/oplti/sitescope_automation}
-      SERVICENOW_ASSIGNMENT_GROUP: ${SERVICENOW_ASSIGNMENT_GROUP:-OSS Assurance}
-      SERVICENOW_CALLER_ID: ${SERVICENOW_USER:-}
-      
-      SMTP_HOST: smtp.company.com
-      SMTP_PORT: 587
-      SMTP_USER: alerts@company.com
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: alerts@company.com
-      SMTP_ESCALATION_DEFAULT_EMAIL: oncall@company.com
-
-      # Microsoft Teams
-      TEAMS_WEBHOOK: ${TEAMS_WEBHOOK:-}
-      
-      # Slack
-      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
-      SLACK_CHANNEL: ${SLACK_CHANNEL:-}
-      
       # Security
       SECRET_KEY: ${SECRET_KEY:-change_this_secret_key_in_production}
       MASTER_ENCRYPTION_KEY: ${MASTER_ENCRYPTION_KEY}
@@ -202,11 +178,8 @@ services:
     # never shipped in offline bundles, never loaded when COMPOSE_FILE is set).
     volumes:
       - ./logs:/app/logs
-      - ./data/reports:/tmp/reports
       - ./data/attachments:/app/attachments
       - ./data/agent-config:/app/data/agent-config   # generated per-agent monitors.yaml
-      - ./data/licence-state:/app/data/licence-state
-      - ./licence:/app/licence                       # axara.lic (drop here or upload via Licence page)
       - ./certs:/app/certs:ro
 
     ports:

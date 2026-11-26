@@ -9,7 +9,7 @@ a <|think|>-led system instruction that ALSO requires a single JSON object respo
 (C-merged incident_analysis_response@1.0 schema), hardened response parsing that
 tolerates a reasoning preamble and markdown fences, one repair-retry, and a safe
 fallback. A human-readable raw_analysis is synthesised from the structured fields so
-Jira/ServiceNow/Teams/Slack render exactly as before.
+ticket and notification texts render exactly as before.
 """
 import logging
 import os
@@ -433,25 +433,3 @@ class LLMAnalyzer:
             conf_pct = str(conf)
         lines.append(f"CONFIDENCE: {conf_pct}")
         return "\n".join(lines)
-
-    # --------------------------------------------------------------- summary
-
-    def generate_summary(self, incident: Dict[str, Any]) -> str:
-        """Brief incident summary for notifications (free text, no JSON contract)."""
-        system = "You write concise 2-3 sentence operational incident summaries."
-        user = (
-            f"Title: {incident.get('title')}\n"
-            f"Description: {incident.get('description')}\n"
-            f"Severity: {incident.get('severity')}\n"
-            "Summarise the key issue and impact."
-        )
-        try:
-            req = LLMRequest(
-                task="incident_analysis", priority="low",
-                response_schema=RESPONSE_SCHEMA_REF,
-                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            )
-            return self._call_chat(req).strip()
-        except Exception as e:
-            logger.error(f"Failed to generate summary: {e}")
-            return incident.get('title', 'Incident occurred')

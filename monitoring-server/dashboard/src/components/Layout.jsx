@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
-import * as edition from '@edition';      // Community: none; Enterprise: extra pages and banner
+import * as edition from '@edition';      // Community: none; other editions: extra pages and banner
 import { mergeNav } from '../edition/merge';
 
 import { useBranding, productName, APP_VERSION } from '../hooks/useBranding';
@@ -199,7 +199,7 @@ function UserMenu() {
               Audit Log
             </button>
           )}
-          {/* Edition admin entries (Enterprise: Licence) */}
+          {/* Edition admin entries */}
           {user?.role === 'admin' && edition.adminMenuItems.map(({ path, label, icon: Icon }) => (
             <button
               key={path}

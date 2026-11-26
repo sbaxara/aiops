@@ -3,7 +3,7 @@
 """FastAPI dependencies that run the plugin registry's checks and gates at request time.
 
 The core declares these on its routes; in Community no check is registered, so they only
-require sign-in (require_user) or do nothing. An Enterprise plugin adds licence checks.
+require sign-in (require_user) or do nothing. Plugins may add their own checks.
 """
 from typing import Callable
 
@@ -29,7 +29,7 @@ def require_user(user: User = Depends(get_current_user)) -> User:
         The user.
 
     Raises:
-        HTTPException: 401 when not signed in; a check's refusal (e.g. 403 licence blocked).
+        HTTPException: 401 when not signed in; a plugin check's refusal (e.g. 403).
     """
     _registry().run_checks("user", user)
     return user
@@ -57,7 +57,7 @@ def require_function(function: str) -> Callable:
         """Refuse the request while the function is off.
 
         Raises:
-            HTTPException: 403 licence_restricted.
+            HTTPException: 403 when a plugin gate turns the function off.
         """
         _registry().function_guard(function)()
     return _dep

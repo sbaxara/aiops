@@ -59,7 +59,6 @@ class MonitorConfigResponse(BaseModel):
     consecutive_failures: int
     severity: str
     assignee: str
-    notification_channels: List[Dict[str, Any]]
     config: Dict[str, Any]
 
 class AgentRegistrationResponse(BaseModel):
@@ -116,12 +115,8 @@ class ServerResponse(BaseModel):
         """Pydantic settings: read attributes from ORM objects."""
         from_attributes = True  # allows reading from SQLAlchemy model
 
-class ITSMConfig(BaseModel):
-    """ITSM tool selection declared by the agent in bootstrap.yaml"""
-    provider: str = "jira"   # "jira" or "servicenow"
-
 class AgentRegistrationRequest(BaseModel):
-    """Agent registration payload. `itsm` is accepted but ignored since v3.2."""
+    """Agent registration payload."""
     hostname:         str
     ip_address:       str
     os_type:          str
@@ -133,7 +128,6 @@ class AgentRegistrationRequest(BaseModel):
     support_team:     Optional[SupportTeamConfig] = None
     environment:      str                 = "production"
     tags:             List[str]           = []
-    itsm:             Optional[ITSMConfig] = None   # ignored since v3.2: the ticketing tool is set per application on the server
 
 class EnrolmentTokenCreate(BaseModel):
     """Request to create an enrolment token (label, uses, days)."""
@@ -286,8 +280,8 @@ def revoke_enrolment_token(enrolment_id: str, request: Request, db: Session = De
 def deregister_agent(request: Request, db: Session = Depends(get_db),
                      server: Server = Depends(verify_agent_key)):
     """Called by `axara-agent uninstall --purge` with the agent's own key: archive its monitors,
-    delete its server-side configuration, free its licence slot and revoke its key.
-    Allowed in every licence stage (removing an agent only reduces usage)."""
+    delete its server-side configuration and revoke its key. Never refused by plugin
+    checks (removing an agent only reduces usage)."""
     summary = lifecycle.decommission_server(db, server, f"agent:{server.hostname}")
     _audit(request, "agent.deregister", actor_type="agent", actor=server.hostname,
            actor_id=str(server.id), resource_id=str(server.id),
@@ -397,7 +391,7 @@ def register_agent(
                "Run 'axara-agent uninstall --purge' on the old installation, or remove the agent "
                "in the dashboard, then install again.", server_id=str(existing.id), **enrol_info)
     try:
-        get_registry().run_checks("agent_registration")   # Enterprise: licence blocked / agent limit
+        get_registry().run_checks("agent_registration")   # checks plugins add (e.g. usage limits)
     except HTTPException as e:
         _audit(http_request, "agent.register", actor_type="agent", actor=host, outcome="denied",
                details={**who, "reason": "licence", **enrol_info})
@@ -478,12 +472,7 @@ def register_agent(
         monitor_configs_response = []
         for config in monitor_configs:
             assignee = config.assignee_override or application.primary_assignee
-            
-            notification_channels = []
-            notif_config = config.notification_override
-            if notif_config and 'channels' in notif_config:
-                notification_channels = notif_config['channels']
-            
+
             monitor_configs_response.append(MonitorConfigResponse(
                 monitor_config_id=config.id,
                 name=config.name,
@@ -495,7 +484,6 @@ def register_agent(
                 consecutive_failures=config.consecutive_failures,
                 severity=config.severity,
                 assignee=assignee,
-                notification_channels=notification_channels,
                 config=config.config or {}
             ))
         
@@ -607,8 +595,8 @@ def check_script_versions(
                         'download_url': f"/api/v1/scripts/{local_script.script_name}/{latest['version']}"
                     })
 
-        # Scripts the agent does not have yet (e.g. a monitor served by an Enterprise
-        # plugin): offered as new installs. Agents only accept *_monitor.py names.
+        # Scripts the agent does not have yet (e.g. a monitor served by a plugin): offered
+        # as new installs. Agents only accept *_monitor.py names.
         local_names = {ls.script_name for ls in request.local_scripts}
         for latest in latest_scripts:
             if latest['script_name'] not in local_names:

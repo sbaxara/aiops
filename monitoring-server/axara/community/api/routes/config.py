@@ -528,7 +528,7 @@ class ApplicationConfigUpdate(BaseModel):
 
 @router.get("/ticket-providers")
 def list_ticket_providers():
-    """Ticketing tools available on this server (Jira; Enterprise adds ServiceNow).
+    """Ticketing tools available on this server (Jira, plus any plugins add).
 
     Returns:
         {"providers": [names]} — the values accepted as an application's itsm_provider.
@@ -603,7 +603,6 @@ class MonitorConfigCreate(BaseModel):
     severity:            str            = "medium"
     config:              Optional[Dict] = None   # type-specific settings (url, path, etc.)
     assignee_override:   Optional[str]  = None
-    notification_override: Optional[Dict] = None
 
 
 class MonitorConfigUpdate(BaseModel):
@@ -616,7 +615,6 @@ class MonitorConfigUpdate(BaseModel):
     severity:            Optional[str]  = None
     config:              Optional[Dict] = None
     assignee_override:   Optional[str]  = None
-    notification_override: Optional[Dict] = None
 
 
 def _monitor_to_dict(m: MonitorConfig, reveal: bool = False) -> Dict:
@@ -641,7 +639,6 @@ def _monitor_to_dict(m: MonitorConfig, reveal: bool = False) -> Dict:
         "severity":             m.severity,
         "config":               _cfg,
         "assignee_override":    m.assignee_override,
-        "notification_override": m.notification_override,
         "created_at":           m.created_at.isoformat() if m.created_at else None,
         "updated_at":           m.updated_at.isoformat() if m.updated_at else None,
     }
@@ -786,7 +783,6 @@ def create_monitor_config(
             severity              = _severity,
             config                = encrypt_config_secrets(_config),
             assignee_override     = body.assignee_override,
-            notification_override = body.notification_override,
             created_at            = datetime.now(timezone.utc),
             updated_at            = datetime.now(timezone.utc),
         )

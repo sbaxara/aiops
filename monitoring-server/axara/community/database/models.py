@@ -66,7 +66,7 @@ class Server(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     # Agent lifecycle (migration e1f2a3b4c5d6): set when the agent is uninstalled with --purge
     # or removed by an admin. The row is kept so past metrics/incidents/reports keep their host;
-    # it no longer counts toward the licence and its API key is revoked.
+    # it no longer counts as an active agent and its API key is revoked.
     decommissioned_at = Column(DateTime(timezone=True))
     decommissioned_by = Column(String(255))
     
@@ -107,7 +107,6 @@ class MonitorConfig(Base):
     
     # Override application defaults (optional)
     assignee_override = Column(String(255))
-    notification_override = Column(JSONB)
     
     config = Column(JSONB)  # Type-specific configuration
     # Set when the monitor's agent was removed (disabled + hidden; kept because deleting a
@@ -305,8 +304,8 @@ class User(Base):
     token_invalidated_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     last_login = Column(DateTime(timezone=True))
-    # Identity source: 'local' (password held here) or an SSO provider
-    # ('ldap' | 'oidc' | 'saml'). SSO users have no password_hash.
+    # Identity source: 'local' (password held here) or the name of an external identity
+    # provider added by a plugin. External users have no password_hash.
     auth_source = Column(String(20), nullable=False, default='local', server_default='local')
     external_id = Column(String(255))      # IdP subject / directory DN
 
@@ -336,7 +335,7 @@ class APIKey(Base):
     __tablename__ = 'api_keys'
     
     id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
-    service_name = Column(String(100))  # jira, servicenow, teams, slack
+    service_name = Column(String(100))  # integration name, e.g. jira
     key_name = Column(String(255))
     encrypted_key = Column(Text)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)

@@ -48,7 +48,7 @@ def _get_version(path: Path) -> str:
 
 def _script_dirs() -> list:
     """Folders monitor scripts are served from: the core templates, then plugin folders
-    active now (e.g. the Enterprise TLS monitor while licensed).
+    active now.
 
     Returns:
         Paths, core first (a plugin script never replaces a core script of the same name).

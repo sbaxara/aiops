@@ -3,51 +3,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { AlertCircle, Clock, ExternalLink, Filter, GitBranch, Link2 } from 'lucide-react';
+import { AlertCircle, Clock, ExternalLink, Filter } from 'lucide-react';
+import * as edition from '@edition';
 import { formatDistanceToNow } from 'date-fns';
 import { endpoints } from '../services/api';
 
 // Badges
 
 import { SeverityBadge, IncidentStatusBadge as StatusBadge, ticketToolName } from '../constants';
-
-// Correlation badges (design ref §6.9.7) — kept inline here rather than added
-// to constants.js, matching this file's own existing pattern of small
-// ad-hoc badges (see severityDot below) rather than assuming constants.js's
-// conventions, which I haven't seen.
-
-function CorrelationParentBadge() {
-  return (
-    <span
-      title="Other incidents have been correlated to this one"
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px]
-                 font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30"
-    >
-      <GitBranch size={10} />
-      Parent
-    </span>
-  );
-}
-
-/**
- * Badge linking a correlated incident to its parent.
- * @param {{parentId: string}} props
- * @returns {JSX.Element}
- */
-function CorrelationLinkedBadge({ parentId }) {
-  return (
-    <Link
-      to={parentId ? `/incidents/${parentId}` : '#'}
-      title="Correlated to another incident — click to view the parent"
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px]
-                 font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30
-                 hover:bg-blue-500/30 transition-colors"
-    >
-      <Link2 size={10} />
-      Linked
-    </Link>
-  );
-}
 
 // Table row
 
@@ -72,10 +35,7 @@ function IncidentRow({ incident }) {
               >
                 {incident.title}
               </Link>
-              {incident.is_correlation_parent && <CorrelationParentBadge />}
-              {incident.parent_incident_id && (
-                <CorrelationLinkedBadge parentId={incident.parent_incident_id} />
-              )}
+              {edition.IncidentBadges && <edition.IncidentBadges incident={incident} size="sm" />}
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
               {incident.application_name} · {incident.server_hostname}

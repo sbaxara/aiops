@@ -7,22 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useBranding, productName, APP_VERSION } from '../hooks/useBranding';
 import { AlertTriangle, Eye, EyeOff, Activity, KeyRound } from 'lucide-react';
 
-// Friendly text for SSO failure codes returned as ?sso_error=<code>.
-// Codes are deliberately coarse; the exact reason is in the audit log.
-const SSO_ERRORS = {
-  no_role_mapping:   'Your directory account is not authorised for this application.',
-  disabled:          'Your account has been disabled. Contact your administrator.',
-  username_conflict: 'This username belongs to a local account. Contact your administrator.',
-  bad_state:         'Your sign-in session expired. Please try again.',
-  missing_state:     'Your sign-in session expired. Please try again.',
-  missing_token:     'Sign-in did not complete. Please try again.',
-  session_failed:    'Sign-in did not complete. Please try again.',
-};
-// Text for a single sign-on error code.
-const ssoMessage = (code) =>
-  SSO_ERRORS[code] ?? 'Single sign-on failed. Please try again or contact your administrator.';
-
-// Sign-in page (password and, when configured, single sign-on).
+// Sign-in page: local accounts, plus any sign-in options the edition module adds.
 export default function Login() {
   const branding = useBranding();
   const { login, isAuthenticated } = useAuth();
@@ -32,20 +17,15 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState(() => {
-    const qs = new URLSearchParams(location.search);
-    if (qs.get('licence') === 'blocked')
-      return 'The Axara licence is not active. Only administrators can sign in - please contact your administrator.';
-    const code = qs.get('sso_error');
-    return code ? ssoMessage(code) : '';
-  });
+  // A message passed in the URL by the edition module (none in Community).
+  const [error, setError]       = useState(() => edition.loginMessage(new URLSearchParams(location.search)));
   const [loading, setLoading]   = useState(false);
-  // Sign-in options: Community has local accounts only; Enterprise adds SSO providers.
-  const { providers, localRegistration: localReg } = edition.useLoginOptions();
+  const {
+    providers, localRegistration: localReg, usernamePlaceholder, passwordHint,
+  } = edition.useLoginOptions();
 
   if (isAuthenticated) return <Navigate to="/" replace />;
 
-  const ldapEnabled = providers.some(p => p.id === 'ldap');
   const redirectProviders = providers.filter(p => p.type === 'redirect');
 
   const handleSubmit = async (e) => {
@@ -93,7 +73,7 @@ export default function Login() {
                 onChange={e => setUsername(e.target.value)}
                 required
                 autoFocus
-                placeholder={ldapEnabled ? 'directory username' : 'admin'}
+                placeholder={usernamePlaceholder || 'admin'}
                 autoComplete="username"
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5
                            text-sm text-white placeholder-gray-500
@@ -123,10 +103,8 @@ export default function Login() {
                   {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              {ldapEnabled && (
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Use your directory (LDAP / AD) credentials, or a local account.
-                </p>
+              {passwordHint && (
+                <p className="text-xs text-gray-500 mt-1.5">{passwordHint}</p>
               )}
             </div>
 

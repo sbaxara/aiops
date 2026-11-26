@@ -19,8 +19,8 @@ advisory lock so two workers can't both link to the same prev_hash.
 Secrets never enter the log: details are recursively redacted by key name, and
 the HTTP middleware never captures request bodies.
 
-After an event is stored it is passed to every audit sink plugins register (Enterprise:
-SIEM forwarding over syslog). The database remains the system of record.
+After an event is stored it is passed to every audit sink plugins register (e.g. forwarding
+to a log collector). The database remains the system of record.
 """
 import hashlib
 import ipaddress
@@ -219,7 +219,7 @@ def record(action: str, *, actor: Optional[str] = None, actor_id: Optional[str] 
     except Exception:
         sinks = []
     event = {**row, "id": new_id, "ts": _ts_str(row["ts"])}
-    for sink in sinks:                               # e.g. Enterprise SIEM forwarding
+    for sink in sinks:                               # sinks registered by plugins
         try:
             sink(event)
         except Exception:

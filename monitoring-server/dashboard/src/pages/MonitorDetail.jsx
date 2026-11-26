@@ -178,11 +178,6 @@ export default function MonitorDetail() {
             <Card title="Thresholds">
               <JsonBlock data={monitor.threshold_config} />
             </Card>
-
-            {/* Notification override */}
-            <Card title="Notification Override">
-              <JsonBlock data={monitor.notification_override} />
-            </Card>
           </>
         )}
 

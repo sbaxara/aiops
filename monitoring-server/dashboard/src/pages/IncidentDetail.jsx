@@ -16,10 +16,8 @@ import {
   XCircle,
   MessageSquare,
   Brain,
-  GitBranch,
-  Link2
 } from 'lucide-react';
-import { Link as RouterLink } from 'react-router-dom';
+import * as edition from '@edition';
 import { ticketToolName } from '../constants';
 
 /**
@@ -102,42 +100,6 @@ function SeverityBadge({ severity }) {
   );
 }
 
-// Correlation badges (design ref §6.9.7) — same visual language as
-// Incidents.jsx's CorrelationParentBadge/CorrelationLinkedBadge, kept as a
-// separate local copy rather than a shared import since these two files
-// don't currently share a components directory for badges (see the inline
-// severityDot/StatusBadge/SeverityBadge pattern already established here).
-
-function CorrelationParentBadge() {
-  return (
-    <span
-      title="Other incidents have been correlated to this one"
-      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs
-                 font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30"
-    >
-      <GitBranch size={12} />
-      Parent
-    </span>
-  );
-}
-
-/**
- * Badge for an incident linked to a correlation parent (Enterprise correlation fields).
- * @returns {JSX.Element}
- */
-function CorrelationLinkedBadge() {
-  return (
-    <span
-      title="This incident has been correlated to a parent"
-      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs
-                 font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30"
-    >
-      <Link2 size={12} />
-      Linked
-    </span>
-  );
-}
-
 /**
  * One labelled value in the details card.
  * @param {{icon: Function, label: string, value: any}} props
@@ -173,7 +135,7 @@ function Card({ title, icon: Icon, children }) {
 }
 
 /**
- * Incident detail page: status, analysis, correlation links, ticket, comments and actions.
+ * Incident detail page: status, analysis, ticket, comments, actions and edition cards.
  * @returns {JSX.Element}
  */
 export default function IncidentDetail() {
@@ -224,8 +186,7 @@ export default function IncidentDetail() {
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <StatusBadge status={incident.status} />
             <SeverityBadge severity={incident.severity} />
-            {incident.is_correlation_parent && <CorrelationParentBadge />}
-            {incident.parent_incident_id && <CorrelationLinkedBadge />}
+            {edition.IncidentBadges && <edition.IncidentBadges incident={incident} />}
           </div>
           <h1 className="text-xl font-bold text-white leading-snug">
             {incident.title}
@@ -276,45 +237,7 @@ export default function IncidentDetail() {
             </Card>
           )}
 
-          {/* Correlated Incidents (design ref §6.9.7) */}
-          {(incident.parent_incident_id || incident.correlated_children?.length > 0) && (
-            <Card title="Correlated Incidents" icon={GitBranch}>
-              {incident.parent_incident_id && (
-                <div className="mb-3 pb-3 border-b border-gray-700">
-                  <p className="text-xs text-gray-400 mb-1">Correlated to parent</p>
-                  <RouterLink
-                    to={`/incidents/${incident.parent_incident_id}`}
-                    className="flex items-center gap-1.5 text-sm text-blue-400 hover:underline"
-                  >
-                    <Link2 size={13} />
-                    {incident.parent_title || incident.parent_incident_id}
-                  </RouterLink>
-                </div>
-              )}
-              {incident.correlated_children?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-400 mb-1">
-                    {incident.correlated_children.length} correlated incident
-                    {incident.correlated_children.length !== 1 ? 's' : ''}
-                  </p>
-                  {incident.correlated_children.map(child => (
-                    <RouterLink
-                      key={child.id}
-                      to={`/incidents/${child.id}`}
-                      className="flex items-center justify-between p-2 bg-gray-700/50
-                                 rounded-lg border border-gray-600 hover:bg-gray-700
-                                 transition-colors"
-                    >
-                      <span className="text-sm text-white truncate">{child.title}</span>
-                      <span className="text-xs text-gray-400 shrink-0 ml-2">
-                        {child.status}
-                      </span>
-                    </RouterLink>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
+          {edition.IncidentDetailCards && <edition.IncidentDetailCards incident={incident} Card={Card} />}
 
         </div>
 

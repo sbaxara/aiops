@@ -6,7 +6,7 @@ For each new incident it opens a ticket with the application's ticket provider, 
 notifications through the registered notifiers, finds similar resolved incidents (RAG),
 runs the LLM analysis and adds it to the incident and the ticket. On resolution it resolves
 the ticket and stores the incident in incident memory. Ticket providers, notifiers and the
-licence gates come from the plugin registry (plugins.loader), so the core imports no
+feature gates come from the plugin registry (plugins.loader), so the core imports no
 ticketing or notification product directly.
 """
 import logging
@@ -110,7 +110,7 @@ class IncidentOrchestrator:
         application's ticketing setting changed since.
 
         Returns:
-            (provider, ticket) — provider is None when the tool is unknown or not licensed;
+            (provider, ticket) — provider is None when the tool is unknown or not enabled now;
             ticket is None when no ticket was opened yet.
         """
         provider = self.registry.ticket_provider(incident.ticket_provider or self._get_itsm_provider(incident))
@@ -154,7 +154,7 @@ class IncidentOrchestrator:
             # Step 2: Send initial notification (incident opened)
             self._send_notifications(incident, event_type='opened')
 
-            # Phase 2: LLM analysis (can take 30-120s) - off in licence monitoring-only/blocked
+            # Phase 2: LLM analysis (can take 30-120s) - skipped while a plugin gate turns it off
             if not self.registry.function_allowed("analysis"):
                 logger.info(f"Incident {incident_id}: analysis skipped (licence restricted)")
                 return True
@@ -175,7 +175,7 @@ class IncidentOrchestrator:
             # Step 7: Save LLM analysis to incidents table AND incident_comments
             self._update_incident_with_analysis(incident, analysis, similar_incidents)
     
-            # Step 8: Add LLM analysis as comment to Jira/ServiceNow
+            # Step 8: Add LLM analysis as a comment on the ticket
             self._add_llm_comment(incident, analysis)
     
             # Step 9: Send follow-up notification (analysis available)

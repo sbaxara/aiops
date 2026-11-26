@@ -101,7 +101,6 @@ function buildYamlBlock(monitor) {
   const m = monitor;
   const config        = m.config        && Object.keys(m.config).length        ? m.config        : null;
   const thresholds    = m.threshold_config && Object.keys(m.threshold_config).length ? m.threshold_config : null;
-  const notifChannels = m.notification_override?.channels ?? [];
 
   let block = `- assignee: ${m.assignee_override ?? 'support@company.com'}\n`;
   block += `  check_interval: ${m.check_interval_seconds}\n`;
@@ -127,25 +126,6 @@ function buildYamlBlock(monitor) {
   block += `  enabled: ${m.enabled}\n`;
   block += `  monitor_config_id: ${m.monitor_config_id}\n`;
   block += `  name: ${toYaml(m.name)}\n`;
-
-  if (notifChannels.length > 0) {
-    block += `  notification_channels:\n`;
-    notifChannels.forEach(ch => {
-      block += `  - type: ${ch.type}\n`;
-      if (ch.channel) block += `    channel: ${ch.channel}\n`;
-      if (ch.recipients?.length) {
-        block += `    recipients:\n`;
-        ch.recipients.forEach(r => { block += `    - ${r}\n`; });
-      }
-      if (ch.severity_filter?.length) {
-        block += `    severity_filter:\n`;
-        ch.severity_filter.forEach(s => { block += `    - ${s}\n`; });
-      }
-    });
-  } else {
-    block += `  notification_channels: []\n`;
-  }
-
   block += `  severity: ${m.severity}\n`;
   if (m.subtype) block += `  subtype: ${m.subtype}\n`;
 
