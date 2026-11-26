@@ -223,3 +223,20 @@ def test_store_rules(engine):
     assert _store(engine, _incident(good, notes="Closed in Jira: rebooted"), source="jira") is True
     md = coll.rows["inc-5"][1]
     assert md["resolution"] == "Closed in Jira: rebooted" and md["resolution_source"] == "jira"
+
+
+def test_embedding_model_loads_from_local_copy_only(monkeypatch):
+    """The embedding model is loaded from the image's copy, never looked up on the Hub."""
+    from axara.community.vector_store import embeddings
+    seen = {}
+
+    class FakeST:
+        """SentenceTransformer stand-in recording its arguments."""
+        def __init__(self, name, **kw):
+            """Record the call."""
+            seen.update(name=name, **kw)
+
+    monkeypatch.setitem(sys.modules, "sentence_transformers", types.SimpleNamespace(SentenceTransformer=FakeST))
+    monkeypatch.setattr(embeddings, "_model", None)
+    embeddings._shared_model()
+    assert seen == {"name": "all-MiniLM-L6-v2", "local_files_only": True}
