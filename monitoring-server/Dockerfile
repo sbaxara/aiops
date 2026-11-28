@@ -34,7 +34,7 @@ ENV HF_HUB_OFFLINE=1
 # ---------------------------------------------------------------- compile stage
 FROM runtime AS compile
 ARG COMPILE=0
-ARG NUITKA_VERSION=4.3.5
+ARG NUITKA_VERSION=4.4
 # Nuitka needs the C library headers (only when compiling; the final image is unchanged).
 RUN if [ "$COMPILE" = "1" ]; then \
         apt-get update \
@@ -43,17 +43,23 @@ RUN if [ "$COMPILE" = "1" ]; then \
     fi
 WORKDIR /src
 COPY axara/community/ axara/community/
-# Each core package becomes its own native module under /out/axara/community/ (COMPILE=1),
-# or is copied as source (COMPILE=0). `axara` is a namespace package (no axara/__init__.py).
+# Every core package (folder) and module (.py) is found automatically and becomes its own native
+# module under /out/axara/community/ (COMPILE=1; the build fails if one is missing), or is copied
+# as source (COMPILE=0). Migrations stay source. `axara` is a namespace package (no axara/__init__.py).
 RUN set -e; C=axara/community; mkdir -p /out/$C; \
-    CPKGS="api processing incident_management database common vector_store utils llm plugins"; \
+    CPKGS=$(for d in $C/*/; do n=$(basename "$d"); case "$n" in __pycache__) ;; *) echo "$n" ;; esac; done); \
+    CMODS=$(for f in $C/*.py; do [ -e "$f" ] || continue; n=$(basename "$f" .py); [ "$n" = "__init__" ] || echo "$n"; done); \
+    echo "core packages:" $CPKGS "| core modules:" $CMODS; \
     if [ "$COMPILE" = "1" ]; then \
         pip install --no-cache-dir "nuitka==${NUITKA_VERSION}"; \
-        for p in $CPKGS; do echo "== compiling axara.community.$p"; \
-            python -m nuitka --module "$C/$p" --nofollow-imports \
-                --nofollow-import-to=axara.community.database.migrations \
-                --include-package=axara.community.$p --output-dir=/out/$C \
-                --remove-output --quiet --assume-yes-for-downloads; done; \
+        nk() { python -m nuitka --module "$1" --nofollow-imports \
+                 --nofollow-import-to=axara.community.database.migrations \
+                 --output-dir=/out/$C --remove-output --quiet --assume-yes-for-downloads "$2"; }; \
+        for p in $CPKGS; do echo "== compiling axara.community.$p"; nk "$C/$p" "--include-package=axara.community.$p"; done; \
+        for m in $CMODS; do echo "== compiling axara.community.$m"; nk "$C/$m.py" "--include-module=axara.community.$m"; done; \
+        missing=""; \
+        for n in $CPKGS $CMODS; do ls /out/$C/$n.*.so >/dev/null 2>&1 || missing="$missing $C/$n"; done; \
+        if [ -n "$missing" ]; then echo "ERROR: not compiled:$missing"; exit 1; fi; \
         rm -f /out/$C/*.pyi; cp $C/__init__.py /out/$C/__init__.py; \
         mkdir -p /out/$C/database && cp -r $C/database/migrations /out/$C/database/migrations; \
     else \
@@ -78,7 +84,14 @@ RUN set -e; mkdir -p /app/logs /app/data/agent-config; \
         if [ -n "$leaked" ]; then echo "ERROR: application source in image: $leaked"; exit 1; fi; \
     fi; \
     if [ -d /app/axara/enterprise ]; then echo "ERROR: Enterprise code in a Community image"; exit 1; fi; \
-    python -c "import axara.community.plugins.loader, axara.community.database.models"
+    # every core package and module imports, and no plugin is loaded
+    ALLOW_INSECURE_SECRET_KEY=1 python -c "import importlib, logging, pathlib; logging.disable(logging.CRITICAL); \
+names = sorted({'axara.community.' + p.name.split('.')[0] for p in pathlib.Path('/app/axara/community').iterdir() \
+                if (p.is_dir() or p.suffix in ('.py', '.so')) and p.name.split('.')[0] not in ('__init__', '__pycache__')}); \
+[importlib.import_module(n) for n in names]; \
+from axara.community.plugins.loader import get_registry; \
+assert not get_registry().plugins, 'a plugin loaded in a Community image'; \
+print('imports ok:', len(names), 'modules')"
 EXPOSE 9090
 CMD ["uvicorn", "axara.community.api.main:app", "--host", "0.0.0.0", "--port", "9090", "--workers", "8", \
      "--ssl-certfile", "/app/certs/server.crt", "--ssl-keyfile", "/app/certs/server.key"]
